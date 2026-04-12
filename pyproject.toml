@@ -33,15 +33,24 @@ Repository = "https://github.com/globallayer/clawdex"
 Issues = "https://github.com/globallayer/clawdex/issues"
 
 [project.optional-dependencies]
+api = [
+    "fastapi>=0.109.0",
+    "uvicorn>=0.25.0",
+    "slowapi>=0.1.9",  # Optional rate limiting
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
     "ruff>=0.1.0",
 ]
+all = [
+    "clawdex[api,dev]",
+]
 
 [project.scripts]
 clawdex = "clawdex.cli:main"
 clawdex-serve = "clawdex.mcp_server:main"
+clawdex-api = "clawdex.api.server:run_server"
 
 [build-system]
 requires = ["hatchling"]

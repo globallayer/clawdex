@@ -7,7 +7,8 @@ Usage:
     clawdex purge           Delete all data (requires confirmation)
     clawdex search QUERY    Search for solutions
     clawdex encrypt         Enable encryption for data at rest
-    clawdex serve           Start the MCP server
+    clawdex serve           Start the REST API server
+    clawdex serve-mcp       Start the MCP server
 """
 
 import argparse
@@ -183,6 +184,31 @@ def cmd_encrypt(args: argparse.Namespace) -> int:
 
 
 def cmd_serve(args: argparse.Namespace) -> int:
+    """Start the REST API server."""
+    try:
+        from .api.server import run_server
+    except ImportError as e:
+        print(f"\nError: Could not import API server: {e}")
+        print("Make sure FastAPI and uvicorn are installed:")
+        print("  pip install fastapi uvicorn")
+        return 1
+
+    print(f"\n🚀 Starting Clawdex REST API server...")
+    print(f"   Host: {args.host}")
+    print(f"   Port: {args.port}")
+    print(f"   Docs: http://{args.host}:{args.port}/docs")
+    print()
+
+    run_server(
+        host=args.host,
+        port=args.port,
+        reload=args.reload,
+        log_level="debug" if args.verbose else "info",
+    )
+    return 0
+
+
+def cmd_serve_mcp(args: argparse.Namespace) -> int:
     """Start the MCP server."""
     from .mcp_server import main
     main()
@@ -197,10 +223,12 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-    clawdex stats                    Show statistics
-    clawdex export ~/backup.json     Export data
-    clawdex search "connection error" Search solutions
-    clawdex encrypt                  Enable encryption
+    clawdex stats                      Show statistics
+    clawdex export ~/backup.json       Export data
+    clawdex search "connection error"  Search solutions
+    clawdex encrypt                    Enable encryption
+    clawdex serve --port 8000          Start REST API server
+    clawdex serve-mcp                  Start MCP server
         """,
     )
 
@@ -239,9 +267,34 @@ Examples:
     encrypt_parser.add_argument("--password", "-p", help="Encryption password")
     encrypt_parser.set_defaults(func=cmd_encrypt)
 
-    # serve
-    serve_parser = subparsers.add_parser("serve", help="Start MCP server")
+    # serve (REST API)
+    serve_parser = subparsers.add_parser("serve", help="Start REST API server")
+    serve_parser.add_argument(
+        "--host", "-H",
+        default="0.0.0.0",
+        help="Host to bind to (default: 0.0.0.0)"
+    )
+    serve_parser.add_argument(
+        "--port", "-p",
+        type=int,
+        default=8000,
+        help="Port to listen on (default: 8000)"
+    )
+    serve_parser.add_argument(
+        "--reload", "-r",
+        action="store_true",
+        help="Enable auto-reload for development"
+    )
+    serve_parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Enable verbose logging"
+    )
     serve_parser.set_defaults(func=cmd_serve)
+
+    # serve-mcp (MCP server)
+    serve_mcp_parser = subparsers.add_parser("serve-mcp", help="Start MCP server")
+    serve_mcp_parser.set_defaults(func=cmd_serve_mcp)
 
     args = parser.parse_args()
 

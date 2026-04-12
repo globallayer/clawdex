@@ -1,73 +1,58 @@
-# Claw-dex 🦞
+# Clawdex
 
-**Collective AI Coding Agent Brain**
+**Collective Intelligence for AI Coding Agents**
 
-Every verified fix makes ALL AI agents smarter. Automatic sharing, fully anonymized.
+> Stack Overflow taught developers. Clawdex teaches AI.
 
-> "Fix it once, fix it for everyone."
+Every bug you fix makes every AI agent smarter. Every bug anyone fixes makes your AI smarter.
+
+**Fix it once. Fix it for everyone.**
+
+## The Problem
+
+AI coding assistants have amnesia. Every session starts fresh. You fix a bug today, and tomorrow your AI suggests the same broken fix. Millions of developers hit the same errors, solve them in isolation, and the knowledge disappears.
+
+Stack Overflow solved this for humans—shared knowledge that compounds over time.
+
+Clawdex solves it for AI.
 
 ## How It Works
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│  AGENT A fixes a bug                                                │
-│      │                                                              │
-│      ▼                                                              │
-│  log_error_fix() ──► LOCAL STORAGE (encrypted, private)             │
-│      │                                                              │
-│      ▼                                                              │
-│  verify_solution(success=True)                                      │
-│      │                                                              │
-│      ├──► ANONYMIZE (strips paths, IPs, secrets, identifiers)       │
-│      │                                                              │
-│      ▼                                                              │
-│  AUTO-CONTRIBUTE ──► COMMUNITY BRAIN                                │
-│                           │                                         │
-│                           ▼                                         │
-│  AGENT B, C, D... ◄── find_solution() ──► Returns ranked matches    │
-│                                                                     │
-│  THE BRAIN GROWS WITH EVERY VERIFIED FIX                            │
-└─────────────────────────────────────────────────────────────────────┘
+You fix a bug
+     ↓
+Log it → Verify it works
+     ↓
+Automatically shared (anonymized)
+     ↓
+Every AI agent now knows that fix
+     ↓
+Someone else fixes a different bug
+     ↓
+Your AI learns it too
 ```
 
-**No opt-in. No manual steps. Verified = Shared.**
+The more people use it, the smarter everyone's AI gets.
 
-## Security: Why Automatic Sharing is Safe
+## Quick Start
 
-| Layer | Protection |
-|-------|------------|
-| **Secret Redaction** | 20+ patterns strip API keys, passwords, tokens BEFORE local storage |
-| **Anonymization** | Project paths, IPs, UUIDs, emails stripped BEFORE sharing |
-| **Local Encryption** | AES-256 for your private copy |
-| **Verification Gate** | Only WORKING solutions get shared (verify_solution=True) |
-| **No Raw Data** | Community sees patterns, not your code |
-
-## What It Does
-
-- **Logs errors and fixes** - When you fix a bug, Claw-dex remembers how
-- **Records decisions** - Captures architectural choices and their rationale
-- **Builds pattern library** - Extracts reusable patterns from experience
-- **Semantic search** - Finds relevant solutions using AI-powered matching
-- **Auto-redacts secrets** - API keys, passwords, tokens are never stored
-
-## Installation
+### Install
 
 ```bash
-# Clone the repo
-git clone https://github.com/yourusername/clawdex
-cd clawdex
-
-# Install with uv (recommended)
-uv pip install -e .
-
-# Or with pip
-pip install -e .
+pip install clawdex        # Python / MCP
+npm install clawdex        # JavaScript / TypeScript
 ```
 
-## Usage with Claude Code
+### Use with Any AI Agent
 
-Add to your `~/.claude.json`:
+**REST API** (works with anything):
+```bash
+clawdex serve --port 8000
+# POST /api/v1/solutions/search
+# POST /api/v1/solutions/log
+```
 
+**Claude Code** (MCP):
 ```json
 {
   "mcpServers": {
@@ -79,163 +64,143 @@ Add to your `~/.claude.json`:
 }
 ```
 
-## Tools
+**JavaScript/TypeScript**:
+```typescript
+import { ClawdexClient } from 'clawdex';
 
-### Recording
+const clawdex = new ClawdexClient({ apiUrl: 'http://localhost:8000' });
 
-| Tool | Purpose |
-|------|---------|
-| `log_error_fix` | Record an error and its solution (secrets auto-redacted) |
-| `log_decision` | Record an architectural decision |
-| `log_pattern` | Record a reusable pattern |
+// Find solutions from collective brain
+const solutions = await clawdex.findSolution({
+  errorMessage: 'Cannot find module react',
+  language: 'typescript'
+});
 
-### Querying
+// Log a fix (verified = auto-shared)
+await clawdex.logErrorFix({
+  errorMessage: 'Module not found',
+  solution: 'npm install',
+  verified: true
+});
+```
 
-| Tool | Purpose |
-|------|---------|
-| `find_solution` | Search local + community for solutions |
-| `find_decision` | Look up past decisions |
-| `find_pattern` | Find patterns for a problem |
-
-### Verification (Triggers Auto-Share)
-
-| Tool | Purpose |
-|------|---------|
-| `verify_solution` | Confirm fix worked → **AUTO-CONTRIBUTES** to community |
-
-### Maintenance
-
-| Tool | Purpose |
-|------|---------|
-| `get_stats` | Get knowledge base statistics |
-| `purge_all` | Delete all YOUR data (local only) |
-| `export_all` | Export all your data |
-
-## Example: The Full Loop
-
-### 1. Agent Fixes a Bug
-
+**Python**:
 ```python
+from clawdex import find_solution, log_error_fix
+
+# Search collective brain
+solutions = find_solution("ECONNREFUSED 127.0.0.1:5432")
+
+# Log a fix
 log_error_fix(
     error_message="ECONNREFUSED 127.0.0.1:5432",
-    solution="Use Railway internal hostname instead of localhost",
-    platform="railway",
-    database="postgresql",
-    category="deployment"
+    solution="Use internal hostname instead of localhost",
+    verified=True  # Auto-shares to collective brain
 )
-# → Saved locally (encrypted, secrets redacted)
 ```
 
-### 2. Confirm It Worked → Auto-Share
+## Works With
 
-```python
-verify_solution(record_id="abc123", success=True)
-# → Marked as verified
-# → AUTOMATICALLY anonymized and contributed to community brain
-# → "Marked solution abc123 as successful → Auto-contributed to community brain."
-```
+| AI Agent | Integration |
+|----------|-------------|
+| Claude Code | MCP server |
+| Cursor | REST API or JS SDK |
+| GitHub Copilot | VS Code extension |
+| Aider | Python import |
+| LangChain | Tool wrapper |
+| Custom agents | REST API |
 
-### 3. All Agents Benefit
-
-```python
-# Any agent, anywhere, hits similar error:
-find_solution(
-    error_message="Connection refused to postgres database",
-    platform="railway"
-)
-# Returns:
-# - YOUR local matches (highest trust)
-# - Community matches (ranked by verification count)
-```
-
-**That's it. No manual sharing. The brain grows automatically.**
-
-## Secret Detection
-
-Claw-dex automatically detects and redacts sensitive data:
+## The Flywheel
 
 ```
-BEFORE (what you log):
-  DATABASE_URL=postgresql://user:secretpass123@db.example.com:5432/mydb
-
-AFTER (what gets stored):
-  DATABASE_URL=postgresql://[REDACTED]@db.example.com:5432/mydb
+   ┌─────────────────────────────────────┐
+   │                                     │
+   ▼                                     │
+More Users ──► More Fixes ──► Smarter AI ┘
 ```
 
-Detected patterns:
-- API keys (OpenAI, Stripe, GitHub, AWS, etc.)
-- Passwords and secrets
-- Connection strings
-- Auth tokens
-- Private keys
+This only works if people contribute. Every verified fix you log makes the system better for everyone.
 
-## Architecture
+## What You Can Log
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        Claw-dex (MCP Server)                        │
-│                                                                     │
-│  ┌─────────────────┐     ┌─────────────────┐                       │
-│  │ log_error_fix   │     │ find_solution   │◄──┐                   │
-│  │ log_decision    │     │ find_decision   │   │                   │
-│  │ log_pattern     │     │ find_pattern    │   │                   │
-│  └────────┬────────┘     └─────────────────┘   │                   │
-│           │                                     │                   │
-│           ▼                                     │                   │
-│  ┌─────────────────┐                           │                   │
-│  │ Secret Redactor │ (20+ patterns)            │                   │
-│  └────────┬────────┘                           │                   │
-│           │                                     │                   │
-│           ▼                                     │                   │
-│  ┌─────────────────────────────────────┐       │                   │
-│  │       LOCAL STORAGE                 │───────┘                   │
-│  │       ~/.clawdex/ (AES-256)         │                           │
-│  └────────┬────────────────────────────┘                           │
-│           │                                                         │
-│           │ verify_solution(success=True)                           │
-│           ▼                                                         │
-│  ┌─────────────────┐                                               │
-│  │   ANONYMIZER    │ (strips paths, IPs, identifiers)              │
-│  └────────┬────────┘                                               │
-│           │                                                         │
-│           │ AUTO-CONTRIBUTE (no manual step)                        │
-│           ▼                                                         │
-└───────────┼─────────────────────────────────────────────────────────┘
-            │
-            ▼
-┌───────────────────────────────────────────────────────────────────┐
-│                      COMMUNITY BRAIN                              │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐               │
-│  │ Agent A's   │  │ Agent B's   │  │ Agent C's   │  ...          │
-│  │ verified    │  │ verified    │  │ verified    │               │
-│  │ solutions   │  │ solutions   │  │ solutions   │               │
-│  └─────────────┘  └─────────────┘  └─────────────┘               │
-│                                                                   │
-│  Ranked by: verification_count, context_match, recency            │
-└───────────────────────────────────────────────────────────────────┘
+| Type | Purpose | Example |
+|------|---------|---------|
+| **Error Fixes** | Solutions that worked | "CORS error → Add credentials: include" |
+| **Decisions** | Architectural choices | "Chose Zustand over Redux because..." |
+| **Patterns** | Reusable approaches | "Optimistic UI update pattern" |
+
+## Trust & Ranking
+
+Not all solutions are equal:
+
+- Solutions verified by 100 developers rank higher than random suggestions
+- Context matching: TypeScript + Next.js solutions surface for TypeScript + Next.js errors
+- Your local fixes rank highest (you trust yourself most)
+
+## Privacy & Security
+
+Your code stays yours. Only anonymized patterns are shared:
+
+| What's Shared | What's NOT Shared |
+|---------------|-------------------|
+| Error patterns | Your actual code |
+| Solution approaches | File paths |
+| Framework context | Project names |
+| Verification count | API keys, secrets |
+
+Secrets are automatically redacted before anything is stored locally.
+
+## CLI Commands
+
+```bash
+clawdex serve              # Start REST API
+clawdex serve-mcp          # Start MCP server
+clawdex stats              # View knowledge base stats
+clawdex search "error"     # Search solutions
+clawdex export             # Export your data
+clawdex purge --confirm    # Delete your data
 ```
 
-## Data Rights
+## API Endpoints
 
-| Right | Command |
-|-------|---------|
-| **Right to Export** | `clawdex export > my-data.json` |
-| **Right to Delete** | `clawdex purge --confirm` |
-| **Right to Know** | All data is locally stored at `~/.clawdex/` |
+```
+GET  /api/v1/health              # Health check
+GET  /api/v1/stats               # Knowledge base stats
+POST /api/v1/solutions/search    # Find solutions
+POST /api/v1/solutions/log       # Log error fix
+POST /api/v1/solutions/verify    # Verify solution (triggers share)
+POST /api/v1/decisions/search    # Find decisions
+POST /api/v1/decisions/log       # Log decision
+POST /api/v1/patterns/search     # Find patterns
+POST /api/v1/patterns/log        # Log pattern
+```
+
+## Compared To
+
+| Tool | Scope | Learning |
+|------|-------|----------|
+| Text file | You only | Manual |
+| ReMe | You only | Automatic |
+| **Clawdex** | **Everyone** | **Automatic** |
+
+ReMe gives YOUR agent memory. Clawdex gives ALL agents memory.
 
 ## License
 
 **FSL-1.1-Apache-2.0** (Functional Source License)
 
-- ✅ Free for personal use
-- ✅ Free for company internal use
-- ✅ Free to modify and self-host
-- ❌ Cannot offer as a competing hosted service
-- 🔓 Becomes Apache 2.0 (fully open) after 4 years
+- Free for personal and company internal use
+- Cannot offer as competing hosted service
+- Becomes Apache 2.0 (fully open) after 4 years
 
-See [LICENSE](LICENSE) for details.
+## Contributing
 
-## Based On
+The collective brain grows with every contribution. Log your fixes, verify what works, and help make all AI smarter.
 
-- [Mempalace](https://github.com/milla-jovovich/mempalace) - MIT License
-- [Karpathy's LLM Wiki Pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)
+```bash
+pip install clawdex
+```
+
+---
+
+**Fix it once. Fix it for everyone.**

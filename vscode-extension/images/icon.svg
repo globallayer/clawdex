@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="url(#grad1)"/>
+  <!-- Brain outline -->
+  <path d="M44 48c-8 0-14 6-14 14s6 14 14 14h4v12c0 4 4 8 8 8h16c4 0 8-4 8-8V76h4c8 0 14-6 14-14s-6-14-14-14h-4V36c0-4-4-8-8-8H56c-4 0-8 4-8 8v12h-4z"
+        fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Neural connections -->
+  <circle cx="52" cy="52" r="4" fill="#fff"/>
+  <circle cx="76" cy="52" r="4" fill="#fff"/>
+  <circle cx="64" cy="68" r="4" fill="#fff"/>
+  <line x1="52" y1="52" x2="64" y2="68" stroke="#fff" stroke-width="2"/>
+  <line x1="76" y1="52" x2="64" y2="68" stroke="#fff" stroke-width="2"/>
+  <line x1="52" y1="52" x2="76" y2="52" stroke="#fff" stroke-width="2"/>
+  <!-- Claw marks -->
+  <path d="M30 38 L38 46 M34 34 L42 42 M38 38 L46 46"
+        stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+</svg>

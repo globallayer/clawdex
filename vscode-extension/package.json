@@ -1,0 +1,140 @@
+{
+  "name": "clawdex",
+  "displayName": "Clawdex - AI Coding Agent Brain",
+  "description": "Collective AI coding agent memory. Log errors, find solutions, and verify fixes from VS Code.",
+  "version": "0.1.0",
+  "publisher": "clawdex",
+  "license": "FSL-1.1-Apache-2.0",
+  "icon": "images/icon.svg",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/clawdex"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/clawdex/issues"
+  },
+  "homepage": "https://github.com/yourusername/clawdex#readme",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Machine Learning"
+  ],
+  "keywords": [
+    "ai",
+    "coding",
+    "errors",
+    "solutions",
+    "memory",
+    "collective",
+    "agent"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "clawdex.logErrorFix",
+        "title": "Clawdex: Log Error & Solution"
+      },
+      {
+        "command": "clawdex.findSolution",
+        "title": "Clawdex: Find Solution for Error"
+      },
+      {
+        "command": "clawdex.findSolutionFromSelection",
+        "title": "Clawdex: Find Solution for Selected Text"
+      },
+      {
+        "command": "clawdex.verifySolution",
+        "title": "Clawdex: Verify Solution Worked"
+      },
+      {
+        "command": "clawdex.logDecision",
+        "title": "Clawdex: Log Architectural Decision"
+      },
+      {
+        "command": "clawdex.logPattern",
+        "title": "Clawdex: Log Reusable Pattern"
+      },
+      {
+        "command": "clawdex.showStats",
+        "title": "Clawdex: Show Knowledge Base Stats"
+      },
+      {
+        "command": "clawdex.refreshStats",
+        "title": "Clawdex: Refresh Stats"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "clawdex.findSolutionFromSelection",
+          "when": "editorHasSelection",
+          "group": "clawdex@1"
+        },
+        {
+          "command": "clawdex.logErrorFix",
+          "when": "editorHasSelection",
+          "group": "clawdex@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Clawdex",
+      "properties": {
+        "clawdex.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Path to Python executable (for clawdex CLI)"
+        },
+        "clawdex.enableStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Clawdex stats in the status bar"
+        },
+        "clawdex.autoQueryOnError": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically query community brain when errors are detected in Problems panel"
+        },
+        "clawdex.defaultLanguage": {
+          "type": "string",
+          "default": "",
+          "description": "Default language context for queries (auto-detected if empty)"
+        },
+        "clawdex.defaultFramework": {
+          "type": "string",
+          "default": "",
+          "description": "Default framework context for queries"
+        },
+        "clawdex.communityEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable community brain search (requires CLAWDEX_COMMUNITY=true)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.22.0"
+  }
+}
