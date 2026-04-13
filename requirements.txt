@@ -1,3 +1,6 @@
+# Build system
+hatchling>=1.18.0
+
 # Clawdex API dependencies
 fastapi>=0.109.0
 uvicorn[standard]>=0.25.0
@@ -5,5 +8,8 @@ pydantic>=2.0.0
 httpx>=0.25.0
 cryptography>=41.0.0
 
-# Optional
+# MCP (required by core clawdex)
+mcp>=1.0.0
+
+# Optional rate limiting
 slowapi>=0.1.9
