@@ -19,6 +19,7 @@ from vault404.tools.maintenance import verify_solution, get_stats, purge_all, ex
 
 # Import storage for mocking
 import vault404.storage as storage_module
+import vault404.tools.maintenance as maintenance_module
 
 
 @pytest.fixture
@@ -34,10 +35,17 @@ def temp_vault_dir():
     from vault404.storage.local_storage import LocalStorage
     storage_module._storage = LocalStorage(data_dir=Path(temp_dir))
 
+    # Also reset the contribution manager to use temp directory
+    original_contrib = maintenance_module._contrib
+    maintenance_module._contrib = None
+    from vault404.sync.contribution import ContributionManager
+    maintenance_module._contrib = ContributionManager(data_dir=Path(temp_dir))
+
     yield temp_dir
 
     # Cleanup
     storage_module._storage = original_storage
+    maintenance_module._contrib = original_contrib
     shutil.rmtree(temp_dir, ignore_errors=True)
 
 

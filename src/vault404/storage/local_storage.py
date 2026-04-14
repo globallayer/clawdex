@@ -16,6 +16,7 @@ from .schemas import ErrorFix, Decision, Pattern, Context
 from ..security.encryption import get_encryptor, CRYPTO_AVAILABLE
 from ..search.ranker import temporal_decay, calculate_score
 from ..search.strategies import multi_strategy_text_score
+from ..search import embeddings
 
 
 # Magic bytes to identify encrypted files
@@ -164,6 +165,17 @@ class LocalStorage:
         """Store an error/fix record."""
         filepath = self.errors_dir / f"{record.id}.json"
 
+        # Compute embedding for semantic search
+        embedding_text = embeddings.combine_text_for_embedding(
+            record.error.message,
+            record.context.model_dump() if record.context else None
+        )
+        embedding_vector = embeddings.get_embedding(embedding_text)
+
+        # Store embedding on record if available
+        if embedding_vector:
+            record.embedding = embedding_vector
+
         # Serialize to JSON
         data = record.model_dump(mode='json')
         data['timestamp'] = record.timestamp.isoformat()
@@ -185,6 +197,8 @@ class LocalStorage:
             # Verification tracking
             "success_count": record.success_count,
             "failure_count": record.failure_count,
+            # Semantic search embedding
+            "embedding": embedding_vector,
         })
         self._save_index()
 
@@ -192,6 +206,7 @@ class LocalStorage:
             "success": True,
             "record_id": record.id,
             "filepath": str(filepath),
+            "has_embedding": embedding_vector is not None,
         }
 
     async def find_solutions(
@@ -201,10 +216,11 @@ class LocalStorage:
         limit: int = 5,
     ) -> list[dict]:
         """
-        Find solutions for an error using multi-strategy matching.
+        Find solutions for an error using hybrid semantic + text matching.
 
         Uses a combination of:
-        - Multi-strategy text matching (keyword, fuzzy, error codes)
+        - Semantic similarity (embeddings) - captures meaning
+        - Multi-strategy text matching (keyword, fuzzy, error codes) - captures exact matches
         - Temporal decay (recent fixes rank higher)
         - Context matching (same language/framework)
         - Verification status and success rate
@@ -213,12 +229,36 @@ class LocalStorage:
         results = []
         now = datetime.now()
 
+        # Compute query embedding for semantic search
+        query_embedding_text = embeddings.combine_text_for_embedding(
+            error_message,
+            context.model_dump() if context else None
+        )
+        query_embedding = embeddings.get_embedding(query_embedding_text)
+        semantic_available = query_embedding is not None
+
         for entry in self._index.get("errors", []):
-            # Multi-strategy text similarity
+            # Semantic similarity (if embeddings available)
+            semantic_sim = 0.0
+            if semantic_available and entry.get("embedding"):
+                semantic_sim = embeddings.cosine_similarity(
+                    query_embedding, entry["embedding"]
+                )
+
+            # Multi-strategy text similarity (fallback/complement)
             text_sim = multi_strategy_text_score(
                 error_message.lower(),
                 entry["error_message"].lower()
             )
+
+            # Hybrid similarity: prefer semantic when available, blend with text
+            if semantic_available and entry.get("embedding"):
+                # Weighted combination: semantic is primary, text is secondary
+                # This captures both meaning (semantic) and exact matches (text)
+                combined_sim = 0.7 * semantic_sim + 0.3 * text_sim
+            else:
+                # Fallback to text-only when no embeddings
+                combined_sim = text_sim
 
             # Context match score
             ctx_score = 0.0
@@ -235,7 +275,7 @@ class LocalStorage:
 
             # Calculate combined score with all signals
             score = calculate_score(
-                text_similarity=text_sim,
+                text_similarity=combined_sim,
                 context_match=ctx_score,
                 temporal_factor=temporal,
                 verified=entry.get("verified", False),
@@ -253,6 +293,7 @@ class LocalStorage:
                     "score": min(score, 1.0),
                     "verified": entry.get("verified", False),
                     "timestamp": entry.get("timestamp"),
+                    "semantic_match": semantic_sim > 0.5 if semantic_available else None,
                 })
 
         # Sort by score and return top results
@@ -289,6 +330,13 @@ class LocalStorage:
         """Store a decision record."""
         filepath = self.decisions_dir / f"{record.id}.json"
 
+        # Compute embedding for semantic search
+        embedding_text = f"{record.title} | {record.choice} | {' '.join(record.alternatives)}"
+        embedding_vector = embeddings.get_embedding(embedding_text)
+
+        if embedding_vector:
+            record.embedding = embedding_vector
+
         data = record.model_dump(mode='json')
         data['timestamp'] = record.timestamp.isoformat()
 
@@ -302,6 +350,7 @@ class LocalStorage:
             "choice": record.choice,
             "context": record.context.model_dump(),
             "timestamp": record.timestamp.isoformat(),
+            "embedding": embedding_vector,
         })
         self._save_index()
 
@@ -309,6 +358,7 @@ class LocalStorage:
             "success": True,
             "record_id": record.id,
             "filepath": str(filepath),
+            "has_embedding": embedding_vector is not None,
         }
 
     async def find_decisions(
@@ -317,14 +367,31 @@ class LocalStorage:
         context: Optional[Context] = None,
         limit: int = 5,
     ) -> list[dict]:
-        """Find past decisions on a topic."""
+        """Find past decisions on a topic using hybrid semantic + text matching."""
         results = []
 
+        # Compute query embedding
+        query_embedding = embeddings.get_embedding(topic)
+        semantic_available = query_embedding is not None
+
         for entry in self._index.get("decisions", []):
-            # Match against title and choice
+            # Semantic similarity
+            semantic_sim = 0.0
+            if semantic_available and entry.get("embedding"):
+                semantic_sim = embeddings.cosine_similarity(
+                    query_embedding, entry["embedding"]
+                )
+
+            # Text similarity (fallback/complement)
             title_sim = self._text_similarity(topic.lower(), entry["title"].lower())
             choice_sim = self._text_similarity(topic.lower(), entry["choice"].lower())
-            similarity = max(title_sim, choice_sim)
+            text_sim = max(title_sim, choice_sim)
+
+            # Hybrid similarity
+            if semantic_available and entry.get("embedding"):
+                similarity = 0.7 * semantic_sim + 0.3 * text_sim
+            else:
+                similarity = text_sim
 
             if similarity > 0.1:
                 results.append({
@@ -345,6 +412,13 @@ class LocalStorage:
         """Store a pattern record."""
         filepath = self.patterns_dir / f"{record.id}.json"
 
+        # Compute embedding for semantic search
+        embedding_text = f"{record.name} | {record.problem} | {record.solution}"
+        embedding_vector = embeddings.get_embedding(embedding_text)
+
+        if embedding_vector:
+            record.embedding = embedding_vector
+
         data = record.model_dump(mode='json')
         data['timestamp'] = record.timestamp.isoformat()
 
@@ -359,6 +433,7 @@ class LocalStorage:
             "problem": record.problem[:200],
             "solution": record.solution[:200],
             "timestamp": record.timestamp.isoformat(),
+            "embedding": embedding_vector,
         })
         self._save_index()
 
@@ -366,6 +441,7 @@ class LocalStorage:
             "success": True,
             "record_id": record.id,
             "filepath": str(filepath),
+            "has_embedding": embedding_vector is not None,
         }
 
     async def find_patterns(
@@ -374,18 +450,35 @@ class LocalStorage:
         category: Optional[str] = None,
         limit: int = 5,
     ) -> list[dict]:
-        """Find patterns for a problem."""
+        """Find patterns for a problem using hybrid semantic + text matching."""
         results = []
+
+        # Compute query embedding
+        query_embedding = embeddings.get_embedding(problem)
+        semantic_available = query_embedding is not None
 
         for entry in self._index.get("patterns", []):
             # Filter by category if specified
             if category and entry.get("category", "").lower() != category.lower():
                 continue
 
-            # Match against problem and name
+            # Semantic similarity
+            semantic_sim = 0.0
+            if semantic_available and entry.get("embedding"):
+                semantic_sim = embeddings.cosine_similarity(
+                    query_embedding, entry["embedding"]
+                )
+
+            # Text similarity (fallback/complement)
             problem_sim = self._text_similarity(problem.lower(), entry["problem"].lower())
             name_sim = self._text_similarity(problem.lower(), entry["name"].lower())
-            similarity = max(problem_sim, name_sim)
+            text_sim = max(problem_sim, name_sim)
+
+            # Hybrid similarity
+            if semantic_available and entry.get("embedding"):
+                similarity = 0.7 * semantic_sim + 0.3 * text_sim
+            else:
+                similarity = text_sim
 
             if similarity > 0.1:
                 results.append({

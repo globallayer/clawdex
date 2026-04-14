@@ -91,6 +91,9 @@ class ErrorFix(BaseModel):
     usage_count: int = 0
     last_accessed: Optional[datetime] = None
 
+    # Semantic search embedding (optional - computed on store)
+    embedding: Optional[list[float]] = None
+
     def to_aaak(self) -> str:
         """Convert to AAAK compressed format for storage"""
         ctx = self.context.to_aaak()
@@ -132,6 +135,9 @@ class Decision(BaseModel):
     lessons: Optional[str] = None
     would_repeat: Optional[bool] = None
 
+    # Semantic search embedding (optional)
+    embedding: Optional[list[float]] = None
+
     def to_aaak(self) -> str:
         """Convert to AAAK compressed format"""
         ctx = self.context.to_aaak()
@@ -169,6 +175,9 @@ class Pattern(BaseModel):
 
     # References to source records
     source_records: list[str] = Field(default_factory=list)
+
+    # Semantic search embedding (optional)
+    embedding: Optional[list[float]] = None
 
     def to_aaak(self) -> str:
         """Convert to AAAK compressed format"""

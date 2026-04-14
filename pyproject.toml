@@ -38,13 +38,17 @@ api = [
     "uvicorn>=0.25.0",
     "slowapi>=0.1.9",
 ]
+semantic = [
+    "sentence-transformers>=2.2.0",
+    "numpy>=1.24.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
     "ruff>=0.1.0",
 ]
 all = [
-    "vault404[api,dev]",
+    "vault404[api,semantic,dev]",
 ]
 
 [project.scripts]
