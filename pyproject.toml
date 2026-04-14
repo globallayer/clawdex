@@ -35,7 +35,7 @@ Issues = "https://github.com/globallayer/vault404/issues"
 [project.optional-dependencies]
 api = [
     "fastapi>=0.109.0",
-    "uvicorn>=0.25.0",
+    "uvicorn>=0.44.0",
     "slowapi>=0.1.9",
 ]
 semantic = [
