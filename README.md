@@ -1,8 +1,32 @@
-# vault404
+<p align="center">
+  <img src="https://raw.githubusercontent.com/globallayer/vault404/master/docs/vault404-logo.png" alt="vault404" width="200" />
+</p>
 
-**Collective Intelligence for AI Coding Agents**
+<h1 align="center">vault404</h1>
 
-> Stack Overflow taught developers. vault404 teaches AI.
+<p align="center">
+  <strong>Collective Intelligence for AI Coding Agents</strong>
+</p>
+
+<p align="center">
+  <a href="https://pypi.org/project/vault404/"><img src="https://img.shields.io/pypi/v/vault404?color=blue&label=PyPI" alt="PyPI"></a>
+  <a href="https://www.npmjs.com/package/vault404"><img src="https://img.shields.io/npm/v/vault404?color=blue&label=npm" alt="npm"></a>
+  <a href="https://github.com/globallayer/vault404/actions"><img src="https://img.shields.io/github/actions/workflow/status/globallayer/vault404/ci.yml?label=CI" alt="CI"></a>
+  <a href="https://github.com/globallayer/vault404/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-FSL--1.1-green" alt="License"></a>
+  <a href="https://github.com/globallayer/vault404"><img src="https://img.shields.io/github/stars/globallayer/vault404?style=social" alt="Stars"></a>
+</p>
+
+<p align="center">
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#how-it-works">How It Works</a> •
+  <a href="#features">Features</a> •
+  <a href="#integrations">Integrations</a> •
+  <a href="https://github.com/globallayer/vault404/issues">Issues</a>
+</p>
+
+---
+
+> **Stack Overflow taught developers. vault404 teaches AI.**
 
 Every bug you fix makes every AI agent smarter. Every bug anyone fixes makes your AI smarter.
 
@@ -12,9 +36,34 @@ Every bug you fix makes every AI agent smarter. Every bug anyone fixes makes you
 
 AI coding assistants have amnesia. Every session starts fresh. You fix a bug today, and tomorrow your AI suggests the same broken fix. Millions of developers hit the same errors, solve them in isolation, and the knowledge disappears.
 
-Stack Overflow solved this for humans—shared knowledge that compounds over time.
+Stack Overflow solved this for humans. **vault404 solves it for AI.**
 
-vault404 solves it for AI.
+## Quick Start
+
+### Install
+
+```bash
+pip install vault404        # Python / MCP
+npm install vault404        # JavaScript / TypeScript
+```
+
+### Use in 30 Seconds
+
+```python
+from vault404 import find_solution, log_error_fix
+
+# Search the collective brain
+solutions = find_solution("ECONNREFUSED 127.0.0.1:5432")
+
+# Log a fix (auto-shared when verified)
+log_error_fix(
+    error_message="ECONNREFUSED 127.0.0.1:5432",
+    solution="Use internal hostname instead of localhost",
+    verified=True
+)
+```
+
+That's it. Your fix now helps every AI agent worldwide.
 
 ## How It Works
 
@@ -34,25 +83,66 @@ Your AI learns it too
 
 The more people use it, the smarter everyone's AI gets.
 
-## Quick Start
+## Features
 
-### Install
+### 🔍 Semantic Search
 
-```bash
-pip install vault404        # Python / MCP
-npm install vault404        # JavaScript / TypeScript
+vault404 understands *meaning*, not just keywords:
+
+```
+"Cannot read property 'x' of undefined"
+     ↓ matches ↓
+"undefined property access error"
 ```
 
-### Use with Any AI Agent
+- **Embedding-based similarity** using sentence-transformers
+- **Hybrid scoring**: 70% semantic + 30% keyword matching
+- **Context-aware**: language, framework, and recency boost relevant results
+- **Auto-installs** on first search (one-time ~90MB model download)
 
-**REST API** (works with anything):
-```bash
-vault404 serve --port 8000
-# POST /api/v1/solutions/search
-# POST /api/v1/solutions/log
-```
+### 📊 Smart Ranking
 
-**Claude Code** (MCP):
+Not all solutions are equal:
+
+| Signal | Weight | Description |
+|--------|--------|-------------|
+| Semantic match | 35% | Meaning similarity via embeddings |
+| Context match | 20% | Same language/framework/database |
+| Recency | 20% | Recent fixes rank higher |
+| Verification | 10% | Community-verified solutions |
+| Success rate | 10% | Historical success/failure ratio |
+| Popularity | 5% | Usage frequency |
+
+### 🔒 Privacy & Security
+
+Your code stays yours. Only anonymized patterns are shared:
+
+| ✅ What's Shared | ❌ What's NOT Shared |
+|------------------|---------------------|
+| Error patterns | Your actual code |
+| Solution approaches | File paths |
+| Framework context | Project names |
+| Verification count | API keys, secrets |
+
+**Security features:**
+- Automatic secret redaction (API keys, passwords, tokens stripped)
+- API key authentication for write operations
+- Rate limiting (60 searches/min, 20 writes/min)
+- Input validation on all endpoints
+- CI/CD with security scanning
+
+### 📝 Three Knowledge Types
+
+| Type | Purpose | Example |
+|------|---------|---------|
+| **Error Fixes** | Solutions that worked | "CORS error → Add credentials: include" |
+| **Decisions** | Architectural choices | "Chose Zustand over Redux because..." |
+| **Patterns** | Reusable approaches | "Optimistic UI update pattern" |
+
+## Integrations
+
+### Claude Code (MCP)
+
 ```json
 {
   "mcpServers": {
@@ -64,38 +154,61 @@ vault404 serve --port 8000
 }
 ```
 
-**JavaScript/TypeScript**:
+### REST API
+
+```bash
+vault404-api  # Start server on port 8000
+```
+
+```
+POST /api/v1/solutions/search    # Find solutions
+POST /api/v1/solutions/log       # Log error fix
+POST /api/v1/solutions/verify    # Verify solution
+POST /api/v1/decisions/log       # Log decision
+POST /api/v1/patterns/log        # Log pattern
+GET  /api/v1/stats               # Knowledge base stats
+```
+
+### JavaScript/TypeScript
+
 ```typescript
-import { vault404Client } from 'vault404';
+import { Vault404Client } from 'vault404';
 
-const vault404 = new vault404Client({ apiUrl: 'http://localhost:8000' });
+const client = new Vault404Client();
 
-// Find solutions from collective brain
-const solutions = await vault404.findSolution({
+// Find solutions
+const solutions = await client.findSolution({
   errorMessage: 'Cannot find module react',
   language: 'typescript'
 });
 
-// Log a fix (verified = auto-shared)
-await vault404.logErrorFix({
+// Log a fix
+await client.logErrorFix({
   errorMessage: 'Module not found',
   solution: 'npm install',
   verified: true
 });
 ```
 
-**Python**:
+### Python
+
 ```python
-from vault404 import find_solution, log_error_fix
+from vault404 import Vault404
 
-# Search collective brain
-solutions = find_solution("ECONNREFUSED 127.0.0.1:5432")
+client = Vault404()
 
-# Log a fix
-log_error_fix(
-    error_message="ECONNREFUSED 127.0.0.1:5432",
-    solution="Use internal hostname instead of localhost",
-    verified=True  # Auto-shares to collective brain
+# Search
+solutions = client.find_solution(
+    error_message="Connection refused",
+    language="python",
+    framework="fastapi"
+)
+
+# Log
+client.log_error_fix(
+    error_message="Connection refused",
+    solution="Start the database service",
+    verified=True
 )
 ```
 
@@ -103,12 +216,23 @@ log_error_fix(
 
 | AI Agent | Integration |
 |----------|-------------|
-| Claude Code | MCP server |
+| Claude Code | MCP server (native) |
 | Cursor | REST API or JS SDK |
-| GitHub Copilot | VS Code extension |
-| Aider | Python import |
+| Aider | Python SDK |
 | LangChain | Tool wrapper |
+| OpenAI/GPT | Function calling |
 | Custom agents | REST API |
+
+## CLI Commands
+
+```bash
+vault404 serve              # Start REST API server
+vault404 serve-mcp          # Start MCP server
+vault404 stats              # View knowledge base stats
+vault404 search "error"     # Search solutions
+vault404 export             # Export your data
+vault404 purge --confirm    # Delete all data
+```
 
 ## The Flywheel
 
@@ -121,91 +245,13 @@ More Users ──► More Fixes ──► Smarter AI ┘
 
 This only works if people contribute. Every verified fix you log makes the system better for everyone.
 
-## What You Can Log
+## Comparison
 
-| Type | Purpose | Example |
-|------|---------|---------|
-| **Error Fixes** | Solutions that worked | "CORS error → Add credentials: include" |
-| **Decisions** | Architectural choices | "Chose Zustand over Redux because..." |
-| **Patterns** | Reusable approaches | "Optimistic UI update pattern" |
-
-## Semantic Search
-
-vault404 understands *meaning*, not just keywords:
-
-```
-"Cannot read property 'x' of undefined"
-     ↓ matches ↓
-"undefined property access error"
-```
-
-**How it works:**
-- Embedding-based similarity using sentence-transformers
-- Hybrid scoring: 70% semantic + 30% keyword matching
-- Context-aware: language, framework, and recency boost relevant results
-- **Auto-installs** on first search (one-time ~90MB model download)
-- Falls back to keyword-only if install fails
-
-## Trust & Ranking
-
-Not all solutions are equal:
-
-- **Semantic matching** - Similar errors found even with different wording
-- **Verification count** - Solutions verified by many rank higher
-- **Context matching** - TypeScript + Next.js solutions surface for TypeScript + Next.js errors
-- **Temporal decay** - Recent fixes rank higher than old ones
-- **Local priority** - Your local fixes rank highest (you trust yourself most)
-
-## Privacy & Security
-
-Your code stays yours. Only anonymized patterns are shared:
-
-| What's Shared | What's NOT Shared |
-|---------------|-------------------|
-| Error patterns | Your actual code |
-| Solution approaches | File paths |
-| Framework context | Project names |
-| Verification count | API keys, secrets |
-
-**Security features:**
-- Automatic secret redaction (API keys, passwords, tokens stripped before storage)
-- API key authentication for write operations
-- Rate limiting (60 searches/min, 20 writes/min)
-- Input validation on all endpoints
-- CI/CD with security scanning (Bandit, safety)
-
-## CLI Commands
-
-```bash
-vault404 serve              # Start REST API
-vault404 serve-mcp          # Start MCP server
-vault404 stats              # View knowledge base stats
-vault404 search "error"     # Search solutions
-vault404 export             # Export your data
-vault404 purge --confirm    # Delete your data
-```
-
-## API Endpoints
-
-```
-GET  /api/v1/health              # Health check
-GET  /api/v1/stats               # Knowledge base stats
-POST /api/v1/solutions/search    # Find solutions
-POST /api/v1/solutions/log       # Log error fix
-POST /api/v1/solutions/verify    # Verify solution (triggers share)
-POST /api/v1/decisions/search    # Find decisions
-POST /api/v1/decisions/log       # Log decision
-POST /api/v1/patterns/search     # Find patterns
-POST /api/v1/patterns/log        # Log pattern
-```
-
-## Compared To
-
-| Tool | Scope | Learning |
-|------|-------|----------|
-| Text file | You only | Manual |
-| ReMe | You only | Automatic |
-| **vault404** | **Everyone** | **Automatic** |
+| Tool | Scope | Learning | Semantic Search |
+|------|-------|----------|-----------------|
+| Text files | You only | Manual | ❌ |
+| ReMe | You only | Automatic | ❌ |
+| **vault404** | **Everyone** | **Automatic** | **✅** |
 
 ReMe gives YOUR agent memory. vault404 gives ALL agents memory.
 
@@ -213,13 +259,18 @@ ReMe gives YOUR agent memory. vault404 gives ALL agents memory.
 
 **FSL-1.1-Apache-2.0** (Functional Source License)
 
-- Free for personal and company internal use
-- Cannot offer as competing hosted service
-- Becomes Apache 2.0 (fully open) after 4 years
+- ✅ Free for personal and company internal use
+- ✅ Self-host anywhere
+- ❌ Cannot offer as competing hosted service
+- 🔓 Becomes Apache 2.0 (fully open) after 4 years
 
 ## Contributing
 
-The collective brain grows with every contribution. Log your fixes, verify what works, and help make all AI smarter.
+The collective brain grows with every contribution:
+
+1. **Use it** - Log your fixes, verify what works
+2. **Report issues** - Help us improve
+3. **Spread the word** - More users = smarter AI for everyone
 
 ```bash
 pip install vault404
@@ -227,4 +278,12 @@ pip install vault404
 
 ---
 
-**Fix it once. Fix it for everyone.**
+<p align="center">
+  <strong>Fix it once. Fix it for everyone.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/globallayer/vault404">GitHub</a> •
+  <a href="https://pypi.org/project/vault404/">PyPI</a> •
+  <a href="https://www.npmjs.com/package/vault404">npm</a>
+</p>
