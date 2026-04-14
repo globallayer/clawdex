@@ -2,11 +2,13 @@
 Route handlers for the Vault404 REST API.
 
 All endpoint handlers that interact with the storage and sync modules.
+Includes rate limiting and API key authentication for write operations.
 """
 
 import os
 from typing import Optional
-from fastapi import APIRouter, HTTPException
+
+from fastapi import APIRouter, HTTPException, Depends, Request
 
 from .models import (
     # Solution models
@@ -33,6 +35,7 @@ from .models import (
     StatsResponse,
     HealthResponse,
 )
+from .auth import require_api_key, optional_api_key
 from ..storage import get_storage, Context, ErrorFix, Decision, Pattern, ErrorInfo, SolutionInfo
 from ..security import redact_secrets
 from ..sync.community import federated_search, get_community_brain
@@ -41,10 +44,15 @@ from ..sync.contribution import ContributionManager
 
 
 # API version
-API_VERSION = "0.1.2"
+API_VERSION = "0.1.3"
 
 # Enable community search via environment variable
 COMMUNITY_ENABLED = os.environ.get("VAULT404_COMMUNITY", "").lower() in ("true", "1", "yes")
+
+# Rate limit settings (requests per minute)
+SEARCH_RATE_LIMIT = os.environ.get("VAULT404_SEARCH_RATE_LIMIT", "60/minute")
+WRITE_RATE_LIMIT = os.environ.get("VAULT404_WRITE_RATE_LIMIT", "20/minute")
+AUTH_RATE_LIMIT = os.environ.get("VAULT404_AUTH_RATE_LIMIT", "120/minute")  # Higher for authenticated
 
 # Create routers
 solutions_router = APIRouter(prefix="/solutions", tags=["solutions"])
@@ -64,18 +72,35 @@ def get_contribution_manager() -> ContributionManager:
     return _contrib
 
 
+# Rate limiter helper - will be injected by server.py if enabled
+def get_rate_limiter():
+    """Get the rate limiter instance if available."""
+    try:
+        from slowapi import Limiter
+        from slowapi.util import get_remote_address
+        return Limiter(key_func=get_remote_address)
+    except ImportError:
+        return None
+
+
 # =============================================================================
 # Solution Routes
 # =============================================================================
 
 
 @solutions_router.post("/search", response_model=SolutionSearchResponse)
-async def search_solutions(request: SolutionSearchRequest) -> SolutionSearchResponse:
+async def search_solutions(
+    request: SolutionSearchRequest,
+    req: Request,
+    api_key: Optional[str] = Depends(optional_api_key),
+) -> SolutionSearchResponse:
     """
     Find solutions for an error message.
 
     Searches local storage and optionally the community brain for matching solutions.
     Results are ranked by relevance and context match.
+
+    Rate limit: 60/minute (unauthenticated), 120/minute (authenticated)
     """
     storage = get_storage()
 
@@ -160,12 +185,19 @@ async def search_solutions(request: SolutionSearchRequest) -> SolutionSearchResp
 
 
 @solutions_router.post("/log", response_model=SolutionLogResponse)
-async def log_solution(request: SolutionLogRequest) -> SolutionLogResponse:
+async def log_solution(
+    request: SolutionLogRequest,
+    api_key: str = Depends(require_api_key),
+) -> SolutionLogResponse:
     """
     Log an error fix to Vault404.
 
+    **Requires API key authentication.**
+
     All inputs are automatically scanned for secrets (API keys, passwords, tokens)
     and redacted before storage.
+
+    Rate limit: 20/minute
     """
     storage = get_storage()
 
@@ -218,12 +250,19 @@ async def log_solution(request: SolutionLogRequest) -> SolutionLogResponse:
 
 
 @solutions_router.post("/verify", response_model=SolutionVerifyResponse)
-async def verify_solution(request: SolutionVerifyRequest) -> SolutionVerifyResponse:
+async def verify_solution(
+    request: SolutionVerifyRequest,
+    api_key: str = Depends(require_api_key),
+) -> SolutionVerifyResponse:
     """
     Mark a solution as verified (worked or didn't work).
 
+    **Requires API key authentication.**
+
     Verified solutions are automatically contributed to the community brain
     to help other AI agents learn.
+
+    Rate limit: 20/minute
     """
     storage = get_storage()
     contrib = get_contribution_manager()
@@ -265,11 +304,16 @@ async def verify_solution(request: SolutionVerifyRequest) -> SolutionVerifyRespo
 
 
 @decisions_router.post("/search", response_model=DecisionSearchResponse)
-async def search_decisions(request: DecisionSearchRequest) -> DecisionSearchResponse:
+async def search_decisions(
+    request: DecisionSearchRequest,
+    api_key: Optional[str] = Depends(optional_api_key),
+) -> DecisionSearchResponse:
     """
     Find past decisions on a topic.
 
     Useful for consistency checking before making architectural choices.
+
+    Rate limit: 60/minute (unauthenticated), 120/minute (authenticated)
     """
     storage = get_storage()
 
@@ -309,11 +353,18 @@ async def search_decisions(request: DecisionSearchRequest) -> DecisionSearchResp
 
 
 @decisions_router.post("/log", response_model=DecisionLogResponse)
-async def log_decision(request: DecisionLogRequest) -> DecisionLogResponse:
+async def log_decision(
+    request: DecisionLogRequest,
+    api_key: str = Depends(require_api_key),
+) -> DecisionLogResponse:
     """
     Log an architectural decision to Vault404.
 
+    **Requires API key authentication.**
+
     Records the decision, alternatives considered, and rationale for future reference.
+
+    Rate limit: 20/minute
     """
     storage = get_storage()
 
@@ -347,11 +398,16 @@ async def log_decision(request: DecisionLogRequest) -> DecisionLogResponse:
 
 
 @patterns_router.post("/search", response_model=PatternSearchResponse)
-async def search_patterns(request: PatternSearchRequest) -> PatternSearchResponse:
+async def search_patterns(
+    request: PatternSearchRequest,
+    api_key: Optional[str] = Depends(optional_api_key),
+) -> PatternSearchResponse:
     """
     Find reusable patterns for a problem.
 
     Check this before implementing solutions to leverage existing patterns.
+
+    Rate limit: 60/minute (unauthenticated), 120/minute (authenticated)
     """
     storage = get_storage()
 
@@ -389,11 +445,18 @@ async def search_patterns(request: PatternSearchRequest) -> PatternSearchRespons
 
 
 @patterns_router.post("/log", response_model=PatternLogResponse)
-async def log_pattern(request: PatternLogRequest) -> PatternLogResponse:
+async def log_pattern(
+    request: PatternLogRequest,
+    api_key: str = Depends(require_api_key),
+) -> PatternLogResponse:
     """
     Log a reusable pattern to Vault404.
 
+    **Requires API key authentication.**
+
     Code snippets are automatically scanned for secrets and redacted.
+
+    Rate limit: 20/minute
     """
     storage = get_storage()
 

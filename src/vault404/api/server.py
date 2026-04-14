@@ -2,14 +2,16 @@
 FastAPI server for the Vault404 REST API.
 
 Provides HTTP endpoints for the collective AI coding agent brain.
+Includes rate limiting, CORS, and API key authentication.
 """
 
 import os
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from .routes import (
     solutions_router,
@@ -20,8 +22,9 @@ from .routes import (
 )
 
 
-# Rate limiting (optional, requires slowapi)
-RATE_LIMIT_ENABLED = os.environ.get("VAULT404_RATE_LIMIT", "").lower() in ("true", "1", "yes")
+# Rate limiting configuration
+RATE_LIMIT_ENABLED = os.environ.get("VAULT404_RATE_LIMIT", "true").lower() in ("true", "1", "yes")
+DEFAULT_RATE_LIMIT = os.environ.get("VAULT404_DEFAULT_RATE_LIMIT", "60/minute")
 
 # CORS settings
 CORS_ORIGINS = os.environ.get(
@@ -35,6 +38,17 @@ async def lifespan(app: FastAPI):
     """Application lifespan handler."""
     # Startup
     print(f"Vault404 API v{API_VERSION} starting...")
+    if RATE_LIMIT_ENABLED:
+        print(f"Rate limiting: enabled ({DEFAULT_RATE_LIMIT})")
+    else:
+        print("Rate limiting: disabled")
+
+    auth_disabled = os.environ.get("VAULT404_AUTH_DISABLED", "").lower() in ("true", "1", "yes")
+    if auth_disabled:
+        print("WARNING: API key authentication is DISABLED")
+    else:
+        print("API key authentication: enabled for write operations")
+
     yield
     # Shutdown
     print("Vault404 API shutting down...")
@@ -44,7 +58,7 @@ def create_app(
     title: str = "Vault404 API",
     description: str = "Collective AI Coding Agent Brain - REST API",
     cors_origins: Optional[list] = None,
-    enable_rate_limiting: bool = False,
+    enable_rate_limiting: Optional[bool] = None,
 ) -> FastAPI:
     """
     Create and configure the FastAPI application.
@@ -53,7 +67,7 @@ def create_app(
         title: API title for OpenAPI docs
         description: API description for OpenAPI docs
         cors_origins: List of allowed CORS origins
-        enable_rate_limiting: Whether to enable rate limiting
+        enable_rate_limiting: Whether to enable rate limiting (default: from env)
 
     Returns:
         Configured FastAPI application
@@ -69,19 +83,19 @@ def create_app(
         openapi_tags=[
             {
                 "name": "solutions",
-                "description": "Search and log error fixes",
+                "description": "Search and log error fixes. Log/verify require API key.",
             },
             {
                 "name": "decisions",
-                "description": "Search and log architectural decisions",
+                "description": "Search and log architectural decisions. Log requires API key.",
             },
             {
                 "name": "patterns",
-                "description": "Search and log reusable patterns",
+                "description": "Search and log reusable patterns. Log requires API key.",
             },
             {
                 "name": "stats",
-                "description": "Statistics and health checks",
+                "description": "Statistics and health checks (public)",
             },
         ],
     )
@@ -96,19 +110,40 @@ def create_app(
         allow_headers=["*"],
     )
 
-    # Optional rate limiting
-    if enable_rate_limiting or RATE_LIMIT_ENABLED:
+    # Rate limiting
+    should_rate_limit = enable_rate_limiting if enable_rate_limiting is not None else RATE_LIMIT_ENABLED
+
+    if should_rate_limit:
         try:
             from slowapi import Limiter, _rate_limit_exceeded_handler
             from slowapi.util import get_remote_address
             from slowapi.errors import RateLimitExceeded
+            from slowapi.middleware import SlowAPIMiddleware
 
-            limiter = Limiter(key_func=get_remote_address)
+            limiter = Limiter(
+                key_func=get_remote_address,
+                default_limits=[DEFAULT_RATE_LIMIT],
+                storage_uri="memory://",  # In-memory storage
+            )
             app.state.limiter = limiter
             app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-            print("Rate limiting enabled")
+            app.add_middleware(SlowAPIMiddleware)
+
         except ImportError:
             print("Warning: slowapi not installed, rate limiting disabled")
+            print("Install with: pip install slowapi")
+
+    # Custom exception handlers
+    @app.exception_handler(422)
+    async def validation_exception_handler(request: Request, exc):
+        """Handle validation errors with cleaner messages."""
+        return JSONResponse(
+            status_code=422,
+            content={
+                "detail": "Validation error",
+                "errors": exc.errors() if hasattr(exc, 'errors') else str(exc),
+            },
+        )
 
     # Include routers under /api/v1
     app.include_router(solutions_router, prefix="/api/v1")
@@ -126,6 +161,7 @@ def create_app(
             "version": API_VERSION,
             "docs": "/docs",
             "health": "/api/v1/health",
+            "auth_info": "Write operations require X-API-Key header",
         }
 
     return app
