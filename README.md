@@ -129,13 +129,36 @@ This only works if people contribute. Every verified fix you log makes the syste
 | **Decisions** | Architectural choices | "Chose Zustand over Redux because..." |
 | **Patterns** | Reusable approaches | "Optimistic UI update pattern" |
 
+## Semantic Search
+
+vault404 understands *meaning*, not just keywords:
+
+```
+"Cannot read property 'x' of undefined"
+     ↓ matches ↓
+"undefined property access error"
+```
+
+**How it works:**
+- Embedding-based similarity using sentence-transformers
+- Hybrid scoring: 70% semantic + 30% keyword matching
+- Context-aware: language, framework, and recency boost relevant results
+- Works offline (falls back to keyword-only if embeddings unavailable)
+
+Install with semantic search:
+```bash
+pip install vault404[semantic]
+```
+
 ## Trust & Ranking
 
 Not all solutions are equal:
 
-- Solutions verified by 100 developers rank higher than random suggestions
-- Context matching: TypeScript + Next.js solutions surface for TypeScript + Next.js errors
-- Your local fixes rank highest (you trust yourself most)
+- **Semantic matching** - Similar errors found even with different wording
+- **Verification count** - Solutions verified by many rank higher
+- **Context matching** - TypeScript + Next.js solutions surface for TypeScript + Next.js errors
+- **Temporal decay** - Recent fixes rank higher than old ones
+- **Local priority** - Your local fixes rank highest (you trust yourself most)
 
 ## Privacy & Security
 
@@ -148,7 +171,12 @@ Your code stays yours. Only anonymized patterns are shared:
 | Framework context | Project names |
 | Verification count | API keys, secrets |
 
-Secrets are automatically redacted before anything is stored locally.
+**Security features:**
+- Automatic secret redaction (API keys, passwords, tokens stripped before storage)
+- API key authentication for write operations
+- Rate limiting (60 searches/min, 20 writes/min)
+- Input validation on all endpoints
+- CI/CD with security scanning (Bandit, safety)
 
 ## CLI Commands
 
