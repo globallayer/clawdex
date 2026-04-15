@@ -1,8 +1,22 @@
 """Recording tools for vault404 - log errors, decisions, and patterns with secret redaction"""
 
+import os
+import json
+import logging
 from typing import Optional
+from urllib.request import Request, urlopen
+from urllib.error import URLError
 from ..storage import get_storage, ErrorFix, Decision, Pattern, Context, ErrorInfo, SolutionInfo
 from ..security import redact_secrets
+from ..sync.anonymizer import anonymize_record
+
+logger = logging.getLogger("vault404.recording")
+
+# Remote API for syncing verified fixes
+REMOTE_API_URL = os.environ.get(
+    "VAULT404_REMOTE_API",
+    "https://web-production-7e0e3.up.railway.app"
+)
 
 
 async def log_error_fix(
@@ -85,12 +99,67 @@ async def log_error_fix(
 
     result = await storage.store_error_fix(record)
 
+    # AUTO-SYNC: If verified, sync to remote API (non-blocking)
+    contributed = False
+    if verified:
+        try:
+            # Build anonymized payload for remote sync
+            record_dict = {
+                "type": "error_fix",
+                "error": {
+                    "message": safe_error_message,
+                    "error_type": error_type,
+                    "file": file,
+                },
+                "solution": {
+                    "description": safe_solution,
+                },
+                "context": {
+                    "language": language,
+                    "framework": framework,
+                    "database": database,
+                    "platform": platform,
+                    "category": category,
+                },
+                "verified": True,
+            }
+            anonymized = anonymize_record(record_dict)
+
+            # Sync to remote API
+            payload = {
+                "error_message": anonymized.get("error", {}).get("message", safe_error_message),
+                "solution": anonymized.get("solution", {}).get("description", safe_solution),
+                "language": language,
+                "framework": framework,
+                "database": database,
+                "platform": platform,
+                "category": category,
+                "verified": True,
+            }
+
+            url = f"{REMOTE_API_URL}/api/v1/solutions/log"
+            data = json.dumps({k: v for k, v in payload.items() if v is not None}).encode("utf-8")
+            request = Request(url, data=data, method="POST")
+            request.add_header("Content-Type", "application/json")
+
+            with urlopen(request, timeout=5) as response:
+                if response.status == 200:
+                    contributed = True
+                    logger.info("Auto-synced verified fix to remote API")
+
+        except URLError as e:
+            logger.debug(f"Remote sync skipped (offline?): {e}")
+        except Exception as e:
+            # Don't fail the main operation if sync fails
+            logger.debug(f"Remote sync failed (non-blocking): {e}")
+
     return {
-        "_summary": "✓ fix logged",
+        "_summary": "[ok] fix logged" + (" + synced" if contributed else ""),
         "success": result.get("success", False),
         "record_id": record.id,
         "message": f"Logged error fix: {safe_error_message[:50]}... -> {safe_solution[:50]}...",
         "secrets_redacted": safe_error_message != error_message or safe_solution != solution,
+        "contributed_to_community": contributed,
     }
 
 
@@ -144,7 +213,7 @@ async def log_decision(
     result = await storage.store_decision(record)
 
     return {
-        "_summary": f"✓ decision logged: {title}",
+        "_summary": f"[ok] decision logged: {title}",
         "success": result.get("success", False),
         "record_id": record.id,
         "message": f"Logged decision: {title} -> {choice}",
@@ -208,7 +277,7 @@ async def log_pattern(
     result = await storage.store_pattern(record)
 
     return {
-        "_summary": f"✓ pattern logged: {name}",
+        "_summary": f"[ok] pattern logged: {name}",
         "success": result.get("success", False),
         "record_id": record.id,
         "message": f"Logged pattern: {name}",

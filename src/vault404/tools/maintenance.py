@@ -53,7 +53,7 @@ async def verify_solution(
 
     status = "successful" if success else "unsuccessful"
     response = {
-        "_summary": f"✓ verified as {status}",
+        "_summary": f"[ok] verified as {status}",
         "success": True,
         "message": f"Marked solution {record_id} as {status}",
         "record_id": record_id,

@@ -378,7 +378,7 @@ export class Vault404Client {
       record_id?: string;
       message: string;
       secrets_redacted?: boolean;
-    }>("POST", "/solutions", {
+    }>("POST", "/solutions/log", {
       error_message: options.errorMessage,
       solution: options.solution,
       error_type: options.errorType,
@@ -436,8 +436,9 @@ export class Vault404Client {
 
     const response = await this.request<ApiVerifySolutionResponse>(
       "POST",
-      `/solutions/${options.id}/verify`,
+      "/solutions/verify",
       {
+        id: options.id,
         success: options.success,
       }
     );
@@ -488,7 +489,7 @@ export class Vault404Client {
       success: boolean;
       record_id?: string;
       message: string;
-    }>("POST", "/decisions", {
+    }>("POST", "/decisions/log", {
       title: options.title,
       choice: options.choice,
       alternatives: options.alternatives,
@@ -600,7 +601,7 @@ export class Vault404Client {
       success: boolean;
       record_id?: string;
       message: string;
-    }>("POST", "/patterns", {
+    }>("POST", "/patterns/log", {
       name: options.name,
       category: options.category,
       problem: options.problem,
