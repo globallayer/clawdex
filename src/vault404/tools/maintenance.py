@@ -1,12 +1,17 @@
 """Maintenance tools for vault404 - verify, update, stats, purge, export"""
 
 import json
+import os
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
 from ..storage import get_storage, reset_storage
 from ..sync.anonymizer import anonymize_record
 from ..sync.contribution import ContributionManager
+from ..recall.tracker import get_tracker
+
+# Enable recall tracking via environment variable
+RECALL_TRACKING = os.environ.get("VAULT404_RECALL_TRACKING", "true").lower() in ("true", "1", "yes")
 
 
 # Global contribution manager instance
@@ -20,7 +25,12 @@ def get_contribution_manager() -> ContributionManager:
     return _contrib
 
 
-async def verify_solution(record_id: str, success: bool) -> dict:
+async def verify_solution(
+    record_id: str,
+    success: bool,
+    re_teach_needed: bool = False,
+    run_id: Optional[str] = None,
+) -> dict:
     """
     Verify whether a solution worked or not.
 
@@ -30,6 +40,8 @@ async def verify_solution(record_id: str, success: bool) -> dict:
     Args:
         record_id: The ID of the error_fix record
         success: True if the solution worked, False if it didn't
+        re_teach_needed: True if human had to re-explain the fix (for recall tracking)
+        run_id: Optional run_id from find_solution for correlation
 
     Returns:
         dict with confirmation and contribution status
@@ -47,6 +59,24 @@ async def verify_solution(record_id: str, success: bool) -> dict:
         "record_id": record_id,
         "verified_as": status,
     }
+
+    # Track recall verification
+    if RECALL_TRACKING:
+        try:
+            tracker = get_tracker()
+            tracked_run_id = tracker.on_verify(
+                record_id=record_id,
+                success=success,
+                re_teach_needed=re_teach_needed,
+                run_id=run_id,
+            )
+            if tracked_run_id:
+                # Finalize the recall event
+                outcome = "pass" if success else "fail"
+                tracker.finalize(tracked_run_id, outcome=outcome)
+                response["_recall_tracked"] = True
+        except Exception:
+            pass  # Don't fail verification if tracking fails
 
     # AUTO-CONTRIBUTE: If solution worked, share it with the community
     if success:

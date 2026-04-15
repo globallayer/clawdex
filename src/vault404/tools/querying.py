@@ -1,12 +1,17 @@
 """Querying tools for vault404 - find solutions, decisions, and patterns"""
 
 import os
+import time
 from typing import Optional
 from ..storage import get_storage, Context
 from ..sync.community import federated_search
+from ..recall.tracker import get_tracker
 
 # Enable community search via environment variable
 COMMUNITY_ENABLED = os.environ.get("VAULT404_COMMUNITY", "").lower() in ("true", "1", "yes")
+
+# Enable recall tracking via environment variable
+RECALL_TRACKING = os.environ.get("VAULT404_RECALL_TRACKING", "true").lower() in ("true", "1", "yes")
 
 
 async def find_solution(
@@ -38,9 +43,11 @@ async def find_solution(
     Returns:
         dict with solutions ranked by relevance
     """
+    start_time = time.time()
     storage = get_storage()
 
     context = None
+    context_dict = None
     if any([project, language, framework, database, platform, category]):
         context = Context(
             project=project,
@@ -50,6 +57,13 @@ async def find_solution(
             platform=platform,
             category=category,
         )
+        context_dict = {
+            "language": language,
+            "framework": framework,
+            "database": database,
+            "platform": platform,
+            "category": category,
+        }
 
     local_results = await storage.find_solutions(
         error_message=error_message,
@@ -63,17 +77,6 @@ async def find_solution(
 
     if COMMUNITY_ENABLED:
         try:
-            context_dict = (
-                {
-                    "language": language,
-                    "framework": framework,
-                    "database": database,
-                    "platform": platform,
-                }
-                if any([language, framework, database, platform])
-                else None
-            )
-
             all_results = await federated_search(
                 error_message,
                 local_results,
@@ -84,6 +87,23 @@ async def find_solution(
         except Exception:
             pass  # Fall back to local only
 
+    # Calculate latency
+    latency_ms = int((time.time() - start_time) * 1000)
+
+    # Track recall event
+    run_id = None
+    if RECALL_TRACKING:
+        try:
+            tracker = get_tracker()
+            run_id = tracker.on_search(
+                error_message=error_message,
+                results=all_results,
+                latency_ms=latency_ms,
+                context=context_dict,
+            )
+        except Exception:
+            pass  # Don't fail search if tracking fails
+
     if not all_results:
         return {
             "_summary": "No solutions found",
@@ -91,6 +111,7 @@ async def find_solution(
             "message": "No matching solutions found in vault404",
             "solutions": [],
             "suggestion": "After fixing this error, use log_error_fix to save the solution.",
+            "_run_id": run_id,  # For correlation with verify_solution
         }
 
     # Build compact summary
@@ -116,6 +137,8 @@ async def find_solution(
             }
             for r in all_results
         ],
+        "_run_id": run_id,  # For correlation with verify_solution
+        "_latency_ms": latency_ms,
     }
 
 

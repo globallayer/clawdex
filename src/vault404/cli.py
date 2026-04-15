@@ -9,6 +9,7 @@ Usage:
     vault404 encrypt         Enable encryption for data at rest
     vault404 serve           Start the REST API server
     vault404 serve-mcp       Start the MCP server
+    vault404 recall          Show recall metrics (fix recall rate, drift)
 """
 
 import argparse
@@ -23,6 +24,7 @@ if sys.platform == "win32":
 from .storage import get_storage, configure_storage, reset_storage
 from .tools.maintenance import get_stats, export_all, purge_all
 from .tools.querying import find_solution, find_decision, find_pattern
+from .recall.analytics import compute_metrics, weekly_report, export_metrics_json
 
 
 def print_json(data: dict) -> None:
@@ -223,6 +225,25 @@ def cmd_serve_mcp(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_recall(args: argparse.Namespace) -> int:
+    """Show recall metrics."""
+    # Export to file
+    if args.export:
+        path = export_metrics_json(args.export, weeks=args.weeks)
+        print(f"Metrics exported to: {path}")
+        return 0
+
+    # JSON output
+    if args.json:
+        metrics = compute_metrics(context_version=args.version)
+        print_json(metrics.to_dict())
+        return 0
+
+    # Human-readable report
+    print(weekly_report(context_version=args.version))
+    return 0
+
+
 def main() -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -296,6 +317,14 @@ Examples:
     # serve-mcp (MCP server)
     serve_mcp_parser = subparsers.add_parser("serve-mcp", help="Start MCP server")
     serve_mcp_parser.set_defaults(func=cmd_serve_mcp)
+
+    # recall (recall metrics)
+    recall_parser = subparsers.add_parser("recall", help="View recall metrics")
+    recall_parser.add_argument("--json", action="store_true", help="Output as JSON")
+    recall_parser.add_argument("--export", "-e", help="Export metrics to file")
+    recall_parser.add_argument("--weeks", "-w", type=int, default=4, help="Weeks of drift data")
+    recall_parser.add_argument("--version", "-v", help="Filter by context version")
+    recall_parser.set_defaults(func=cmd_recall)
 
     args = parser.parse_args()
 
