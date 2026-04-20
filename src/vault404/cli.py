@@ -2,6 +2,7 @@
 vault404 Command Line Interface
 
 Usage:
+    vault404 setup-claude    Configure Claude Code (MCP + permissions)
     vault404 stats           Show knowledge base statistics
     vault404 export [PATH]   Export all data to JSON
     vault404 purge           Delete all data (requires confirmation)
@@ -244,6 +245,108 @@ def cmd_recall(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_setup_claude(args: argparse.Namespace) -> int:
+    """Configure vault404 for Claude Code with auto-allow permissions."""
+    from pathlib import Path
+
+    # All vault404 MCP tools that need auto-allow permissions
+    VAULT404_TOOLS = [
+        "mcp__vault404__log_error_fix",
+        "mcp__vault404__log_decision",
+        "mcp__vault404__log_pattern",
+        "mcp__vault404__find_solution",
+        "mcp__vault404__find_decision",
+        "mcp__vault404__find_pattern",
+        "mcp__vault404__verify_solution",
+        "mcp__vault404__agent_brain_stats",
+    ]
+
+    MCP_SERVER_CONFIG = {
+        "command": "python",
+        "args": ["-m", "vault404.mcp_server"]
+    }
+
+    def get_claude_config_dir() -> Path:
+        if sys.platform == "win32":
+            return Path.home() / ".claude"
+        return Path.home() / ".claude"
+
+    def load_json_file(path: Path) -> dict:
+        if path.exists():
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except (json.JSONDecodeError, IOError):
+                return {}
+        return {}
+
+    def save_json_file(path: Path, data: dict) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+
+    print("\n" + "=" * 50)
+    print("  vault404 Setup for Claude Code")
+    print("=" * 50 + "\n")
+
+    config_dir = get_claude_config_dir()
+    print(f"Config directory: {config_dir}\n")
+
+    changes_made = False
+
+    # Step 1: MCP Server
+    print("[1/2] MCP Server Configuration")
+    mcp_config_path = config_dir / "claude_desktop_config.json"
+    mcp_config = load_json_file(mcp_config_path)
+
+    if "mcpServers" not in mcp_config:
+        mcp_config["mcpServers"] = {}
+
+    if "vault404" not in mcp_config["mcpServers"]:
+        mcp_config["mcpServers"]["vault404"] = MCP_SERVER_CONFIG
+        save_json_file(mcp_config_path, mcp_config)
+        print(f"  MCP server: Registered in {mcp_config_path}")
+        changes_made = True
+    else:
+        print("  MCP server: Already configured")
+
+    # Step 2: Permissions
+    print("\n[2/2] Tool Permissions (Auto-Allow)")
+    settings_path = config_dir / "settings.json"
+    settings = load_json_file(settings_path)
+
+    if "permissions" not in settings:
+        settings["permissions"] = {}
+    if "allow" not in settings["permissions"]:
+        settings["permissions"]["allow"] = []
+
+    existing = set(settings["permissions"]["allow"])
+    missing = set(VAULT404_TOOLS) - existing
+
+    if missing:
+        settings["permissions"]["allow"].extend(sorted(missing))
+        save_json_file(settings_path, settings)
+        print(f"  Permissions: Added {len(missing)} tool(s) to {settings_path}")
+        changes_made = True
+    else:
+        print("  Permissions: Already configured")
+
+    # Summary
+    print("\n" + "-" * 50)
+    if changes_made:
+        print("\n Setup complete!")
+        print("\n IMPORTANT: Restart Claude Code for changes to take effect.\n")
+        print("vault404 will now operate silently:")
+        print("  - Searches happen automatically on errors")
+        print("  - Fixes are logged without prompts")
+        print("  - No permission dialogs will appear")
+    else:
+        print("\nvault404 is already configured. No changes needed.\n")
+
+    print("=" * 50 + "\n")
+    return 0
+
+
 def main() -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -252,6 +355,7 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+    vault404 setup-claude               Configure Claude Code (run this first!)
     vault404 stats                      Show statistics
     vault404 export ~/backup.json       Export data
     vault404 search "connection error"  Search solutions
@@ -264,6 +368,13 @@ Examples:
     parser.add_argument("--json", action="store_true", help="Output as JSON")
 
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
+
+    # setup-claude (FIRST - most important for new users)
+    setup_claude_parser = subparsers.add_parser(
+        "setup-claude",
+        help="Configure Claude Code (MCP server + auto-allow permissions)"
+    )
+    setup_claude_parser.set_defaults(func=cmd_setup_claude)
 
     # stats
     stats_parser = subparsers.add_parser("stats", help="Show knowledge base statistics")

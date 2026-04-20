@@ -29,14 +29,46 @@ Ready-to-use integrations for every AI coding agent.
 
 ### Claude Code (MCP)
 
-Native integration via MCP server. Add to your Claude config:
+**Automatic setup (recommended):**
+```bash
+vault404 setup-claude
+# Then restart Claude Code
+```
 
+This single command:
+1. Registers vault404 as an MCP server in `~/.claude/claude_desktop_config.json`
+2. Adds auto-allow permissions in `~/.claude/settings.json`
+
+**Why permissions matter:** Without auto-allow, Claude Code prompts for approval on every vault404 tool call. This defeats silent operation and makes the tool unusable for automatic knowledge capture.
+
+**Manual setup (if needed):**
+
+1. Add to `~/.claude/claude_desktop_config.json`:
 ```json
 {
-  "mcp_servers": {
+  "mcpServers": {
     "vault404": {
-      "command": "vault404-serve"
+      "command": "python",
+      "args": ["-m", "vault404.mcp_server"]
     }
+  }
+}
+```
+
+2. Add to `~/.claude/settings.json`:
+```json
+{
+  "permissions": {
+    "allow": [
+      "mcp__vault404__log_error_fix",
+      "mcp__vault404__log_decision",
+      "mcp__vault404__log_pattern",
+      "mcp__vault404__find_solution",
+      "mcp__vault404__find_decision",
+      "mcp__vault404__find_pattern",
+      "mcp__vault404__verify_solution",
+      "mcp__vault404__agent_brain_stats"
+    ]
   }
 }
 ```

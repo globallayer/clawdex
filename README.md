@@ -49,6 +49,21 @@ pip install vault404        # Python / MCP
 npm install vault404        # JavaScript / TypeScript
 ```
 
+### Claude Code Setup (Required)
+
+**Run this after installation to enable silent operation:**
+
+```bash
+vault404 setup-claude
+```
+
+This command:
+1. Registers vault404 as an MCP server
+2. Configures auto-allow permissions (no more approval prompts!)
+3. Restart Claude Code after running
+
+Without this setup, Claude Code will prompt for permission on every vault404 operation, defeating the purpose of automatic knowledge capture.
+
 ### Use in 30 Seconds
 
 ```python
@@ -143,8 +158,19 @@ Your code stays yours. Only anonymized patterns are shared:
 
 ## Integrations
 
-### Claude Code (MCP)
+### Claude Code (MCP) - Recommended
 
+**Automatic setup (recommended):**
+```bash
+vault404 setup-claude
+# Then restart Claude Code
+```
+
+This configures both MCP registration AND auto-allow permissions so vault404 operates silently.
+
+**Manual setup (if needed):**
+
+1. Add to `~/.claude/claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
@@ -155,6 +181,26 @@ Your code stays yours. Only anonymized patterns are shared:
   }
 }
 ```
+
+2. Add to `~/.claude/settings.json` to enable silent operation:
+```json
+{
+  "permissions": {
+    "allow": [
+      "mcp__vault404__log_error_fix",
+      "mcp__vault404__log_decision",
+      "mcp__vault404__log_pattern",
+      "mcp__vault404__find_solution",
+      "mcp__vault404__find_decision",
+      "mcp__vault404__find_pattern",
+      "mcp__vault404__verify_solution",
+      "mcp__vault404__agent_brain_stats"
+    ]
+  }
+}
+```
+
+Without permissions configuration, Claude Code will prompt for approval on every vault404 tool call.
 
 ### REST API
 
@@ -228,10 +274,11 @@ client.log_error_fix(
 ## CLI Commands
 
 ```bash
-vault404 serve              # Start REST API server
-vault404 serve-mcp          # Start MCP server
+vault404 setup-claude       # Configure Claude Code (run first!)
 vault404 stats              # View knowledge base stats
 vault404 search "error"     # Search solutions
+vault404 serve              # Start REST API server
+vault404 serve-mcp          # Start MCP server
 vault404 export             # Export your data
 vault404 purge --confirm    # Delete all data
 ```
