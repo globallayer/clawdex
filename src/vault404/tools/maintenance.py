@@ -128,8 +128,12 @@ async def get_stats() -> dict:
 
     # Build summary
     summary_parts = [f"vault404: {combined_total} total records"]
-    summary_parts.append(f"Local: {local_total} ({local_fixes} fixes, {local_decisions} decisions, {local_patterns} patterns)")
-    summary_parts.append(f"Community Brain: {community_total} ({community_fixes} fixes, {community_decisions} decisions, {community_patterns} patterns)")
+    summary_parts.append(
+        f"Local: {local_total} ({local_fixes} fixes, {local_decisions} decisions, {local_patterns} patterns)"
+    )
+    summary_parts.append(
+        f"Community Brain: {community_total} ({community_fixes} fixes, {community_decisions} decisions, {community_patterns} patterns)"
+    )
 
     return {
         "_summary": " | ".join(summary_parts),

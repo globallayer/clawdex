@@ -281,6 +281,7 @@ def cmd_sync(args: argparse.Namespace) -> int:
                     continue  # Only sync verified
 
                 import hashlib
+
                 content = f"{record.get('error', {}).get('message', '')[:100]}|{record.get('solution', {}).get('description', '')[:100]}"
                 content_hash = hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()
 
@@ -324,6 +325,7 @@ def cmd_sync(args: argparse.Namespace) -> int:
                 record = json.loads(f.read_text(encoding="utf-8"))
 
                 import hashlib
+
                 content = f"{record.get('title', '')[:100]}|{record.get('choice', '')[:100]}"
                 content_hash = hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()
 
@@ -365,6 +367,7 @@ def cmd_sync(args: argparse.Namespace) -> int:
                 record = json.loads(f.read_text(encoding="utf-8"))
 
                 import hashlib
+
                 content = f"{record.get('name', '')[:100]}|{record.get('problem', '')[:100]}"
                 content_hash = hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()
 
@@ -372,8 +375,12 @@ def cmd_sync(args: argparse.Namespace) -> int:
                     "content_hash": content_hash,
                     "record_type": "pattern",
                     "category": record.get("category"),
-                    "language": ",".join(record.get("languages", [])) if record.get("languages") else None,
-                    "framework": ",".join(record.get("frameworks", [])) if record.get("frameworks") else None,
+                    "language": ",".join(record.get("languages", []))
+                    if record.get("languages")
+                    else None,
+                    "framework": ",".join(record.get("frameworks", []))
+                    if record.get("frameworks")
+                    else None,
                     "error_data": {"name": record.get("name"), "problem": record.get("problem")},
                     "solution_data": {
                         "solution": record.get("solution"),
@@ -423,10 +430,7 @@ def cmd_setup_claude(args: argparse.Namespace) -> int:
         "mcp__vault404__agent_brain_stats",
     ]
 
-    MCP_SERVER_CONFIG = {
-        "command": "python",
-        "args": ["-m", "vault404.mcp_server"]
-    }
+    MCP_SERVER_CONFIG = {"command": "python", "args": ["-m", "vault404.mcp_server"]}
 
     def get_claude_config_dir() -> Path:
         if sys.platform == "win32":
@@ -436,7 +440,7 @@ def cmd_setup_claude(args: argparse.Namespace) -> int:
     def load_json_file(path: Path) -> dict:
         if path.exists():
             try:
-                with open(path, 'r', encoding='utf-8') as f:
+                with open(path, "r", encoding="utf-8") as f:
                     return json.load(f)
             except (json.JSONDecodeError, IOError):
                 return {}
@@ -444,7 +448,7 @@ def cmd_setup_claude(args: argparse.Namespace) -> int:
 
     def save_json_file(path: Path, data: dict) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
     print("\n" + "=" * 50)
@@ -533,15 +537,13 @@ Examples:
 
     # setup-claude (FIRST - most important for new users)
     setup_claude_parser = subparsers.add_parser(
-        "setup-claude",
-        help="Configure Claude Code (MCP server + auto-allow permissions)"
+        "setup-claude", help="Configure Claude Code (MCP server + auto-allow permissions)"
     )
     setup_claude_parser.set_defaults(func=cmd_setup_claude)
 
     # sync - push local data to community brain
     sync_parser = subparsers.add_parser(
-        "sync",
-        help="Sync all verified local data to the Community Brain"
+        "sync", help="Sync all verified local data to the Community Brain"
     )
     sync_parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed output")
     sync_parser.set_defaults(func=cmd_sync)

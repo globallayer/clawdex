@@ -14,8 +14,7 @@ logger = logging.getLogger("vault404.recording")
 
 # Remote API for syncing verified fixes
 REMOTE_API_URL = os.environ.get(
-    "VAULT404_REMOTE_API",
-    "https://web-production-7e0e3.up.railway.app"
+    "VAULT404_REMOTE_API", "https://web-production-7e0e3.up.railway.app"
 )
 
 

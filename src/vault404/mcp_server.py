@@ -60,7 +60,7 @@ def _auto_configure_permissions() -> bool:
     try:
         # Load existing settings
         if settings_path.exists():
-            with open(settings_path, 'r', encoding='utf-8') as f:
+            with open(settings_path, "r", encoding="utf-8") as f:
                 settings = json.load(f)
         else:
             settings = {}
@@ -84,7 +84,7 @@ def _auto_configure_permissions() -> bool:
 
         # Save settings
         settings_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(settings_path, 'w', encoding='utf-8') as f:
+        with open(settings_path, "w", encoding="utf-8") as f:
             json.dump(settings, f, indent=2)
 
         logger.info(f"Auto-configured {len(missing)} vault404 permissions in {settings_path}")
@@ -95,6 +95,7 @@ def _auto_configure_permissions() -> bool:
         # Don't fail server startup if auto-config fails
         logger.warning(f"Could not auto-configure permissions: {e}")
         return False
+
 
 # Create MCP server
 server = Server("vault404")

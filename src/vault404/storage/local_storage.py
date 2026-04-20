@@ -111,9 +111,9 @@ class LocalStorage:
                 try:
                     legacy_data = json.loads(legacy_index.read_text(encoding="utf-8"))
                     legacy_count = (
-                        len(legacy_data.get("errors", [])) +
-                        len(legacy_data.get("decisions", [])) +
-                        len(legacy_data.get("patterns", []))
+                        len(legacy_data.get("errors", []))
+                        + len(legacy_data.get("decisions", []))
+                        + len(legacy_data.get("patterns", []))
                     )
 
                     # Check current data count
@@ -122,9 +122,9 @@ class LocalStorage:
                         try:
                             current_data = json.loads(self.index_path.read_text(encoding="utf-8"))
                             current_count = (
-                                len(current_data.get("errors", [])) +
-                                len(current_data.get("decisions", [])) +
-                                len(current_data.get("patterns", []))
+                                len(current_data.get("errors", []))
+                                + len(current_data.get("decisions", []))
+                                + len(current_data.get("patterns", []))
                             )
                         except (json.JSONDecodeError, IOError):
                             pass
@@ -196,7 +196,9 @@ class LocalStorage:
                     current_data.setdefault("patterns", []).append(pattern)
 
             # Save merged index
-            self._atomic_write(self.index_path, json.dumps(current_data, indent=2, ensure_ascii=False))
+            self._atomic_write(
+                self.index_path, json.dumps(current_data, indent=2, ensure_ascii=False)
+            )
 
         except (json.JSONDecodeError, IOError):
             pass
@@ -238,9 +240,9 @@ class LocalStorage:
 
         files_on_disk = len(error_files) + len(decision_files) + len(pattern_files)
         entries_in_index = (
-            len(index.get("errors", [])) +
-            len(index.get("decisions", [])) +
-            len(index.get("patterns", []))
+            len(index.get("errors", []))
+            + len(index.get("decisions", []))
+            + len(index.get("patterns", []))
         )
 
         # If index is missing entries, rebuild from files
@@ -259,19 +261,21 @@ class LocalStorage:
             try:
                 content = self._read_file(filepath)
                 data = json.loads(content)
-                index["errors"].append({
-                    "id": data.get("id", filepath.stem),
-                    "error_message": data.get("error", {}).get("message", "")[:200],
-                    "solution": data.get("solution", {}).get("description", "")[:200],
-                    "context": data.get("context", {}),
-                    "timestamp": data.get("timestamp", datetime.now().isoformat()),
-                    "verified": data.get("verified", False),
-                    "usage_count": data.get("usage_count", 0),
-                    "last_accessed": data.get("last_accessed"),
-                    "success_count": data.get("success_count", 0),
-                    "failure_count": data.get("failure_count", 0),
-                    "embedding": data.get("embedding"),
-                })
+                index["errors"].append(
+                    {
+                        "id": data.get("id", filepath.stem),
+                        "error_message": data.get("error", {}).get("message", "")[:200],
+                        "solution": data.get("solution", {}).get("description", "")[:200],
+                        "context": data.get("context", {}),
+                        "timestamp": data.get("timestamp", datetime.now().isoformat()),
+                        "verified": data.get("verified", False),
+                        "usage_count": data.get("usage_count", 0),
+                        "last_accessed": data.get("last_accessed"),
+                        "success_count": data.get("success_count", 0),
+                        "failure_count": data.get("failure_count", 0),
+                        "embedding": data.get("embedding"),
+                    }
+                )
             except (json.JSONDecodeError, IOError, ValueError):
                 continue
 
@@ -280,14 +284,16 @@ class LocalStorage:
             try:
                 content = self._read_file(filepath)
                 data = json.loads(content)
-                index["decisions"].append({
-                    "id": data.get("id", filepath.stem),
-                    "title": data.get("title", ""),
-                    "choice": data.get("choice", ""),
-                    "context": data.get("context", {}),
-                    "timestamp": data.get("timestamp", datetime.now().isoformat()),
-                    "embedding": data.get("embedding"),
-                })
+                index["decisions"].append(
+                    {
+                        "id": data.get("id", filepath.stem),
+                        "title": data.get("title", ""),
+                        "choice": data.get("choice", ""),
+                        "context": data.get("context", {}),
+                        "timestamp": data.get("timestamp", datetime.now().isoformat()),
+                        "embedding": data.get("embedding"),
+                    }
+                )
             except (json.JSONDecodeError, IOError, ValueError):
                 continue
 
@@ -296,15 +302,17 @@ class LocalStorage:
             try:
                 content = self._read_file(filepath)
                 data = json.loads(content)
-                index["patterns"].append({
-                    "id": data.get("id", filepath.stem),
-                    "name": data.get("name", ""),
-                    "category": data.get("category", ""),
-                    "problem": data.get("problem", "")[:200],
-                    "solution": data.get("solution", "")[:200],
-                    "timestamp": data.get("timestamp", datetime.now().isoformat()),
-                    "embedding": data.get("embedding"),
-                })
+                index["patterns"].append(
+                    {
+                        "id": data.get("id", filepath.stem),
+                        "name": data.get("name", ""),
+                        "category": data.get("category", ""),
+                        "problem": data.get("problem", "")[:200],
+                        "solution": data.get("solution", "")[:200],
+                        "timestamp": data.get("timestamp", datetime.now().isoformat()),
+                        "embedding": data.get("embedding"),
+                    }
+                )
             except (json.JSONDecodeError, IOError, ValueError):
                 continue
 
@@ -343,12 +351,10 @@ class LocalStorage:
         """
         # Create temp file in same directory (important for atomic rename)
         fd, temp_path = tempfile.mkstemp(
-            dir=filepath.parent,
-            prefix=f".{filepath.stem}_",
-            suffix=".tmp"
+            dir=filepath.parent, prefix=f".{filepath.stem}_", suffix=".tmp"
         )
         try:
-            with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
                 f.write(content)
 
             # Atomic rename
@@ -446,14 +452,14 @@ class LocalStorage:
 
         # CRITICAL: Never write empty index if files exist
         files_on_disk = (
-            len(list(self.errors_dir.glob("*.json"))) +
-            len(list(self.decisions_dir.glob("*.json"))) +
-            len(list(self.patterns_dir.glob("*.json")))
+            len(list(self.errors_dir.glob("*.json")))
+            + len(list(self.decisions_dir.glob("*.json")))
+            + len(list(self.patterns_dir.glob("*.json")))
         )
         entries_in_index = (
-            len(self._index.get("errors", [])) +
-            len(self._index.get("decisions", [])) +
-            len(self._index.get("patterns", []))
+            len(self._index.get("errors", []))
+            + len(self._index.get("decisions", []))
+            + len(self._index.get("patterns", []))
         )
 
         if files_on_disk > 0 and entries_in_index == 0:

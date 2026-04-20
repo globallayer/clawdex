@@ -384,10 +384,9 @@ class CommunityBrain:
                 categories[cat] = categories.get(cat, 0) + 1
 
             # Count unique contributors
-            unique_contributors = len(set(
-                r.get("contributor_hash") for r in results
-                if r.get("contributor_hash")
-            ))
+            unique_contributors = len(
+                set(r.get("contributor_hash") for r in results if r.get("contributor_hash"))
+            )
 
             return {
                 "success": True,

@@ -100,28 +100,20 @@ def compute_metrics(
         # Fix Recall Rate
         # count(is_repeat AND applied_prior_fix AND !re_teach_needed) / count(is_repeat)
         fix_recall_count = sum(
-            1
-            for e in repeat_events
-            if e["applied_prior_fix"] and not e["re_teach_needed"]
+            1 for e in repeat_events if e["applied_prior_fix"] and not e["re_teach_needed"]
         )
         metrics.fix_recall_rate = round(fix_recall_count / metrics.repeat_scenarios, 4)
 
         # No-Reteach Success Rate
         # count(is_repeat AND outcome='pass' AND !re_teach_needed) / count(is_repeat)
         no_reteach_success = sum(
-            1
-            for e in repeat_events
-            if e["outcome"] == "pass" and not e["re_teach_needed"]
+            1 for e in repeat_events if e["outcome"] == "pass" and not e["re_teach_needed"]
         )
-        metrics.no_reteach_success_rate = round(
-            no_reteach_success / metrics.repeat_scenarios, 4
-        )
+        metrics.no_reteach_success_rate = round(no_reteach_success / metrics.repeat_scenarios, 4)
 
         # False positive rate among repeats
         false_positives = sum(1 for e in repeat_events if e["false_positive"])
-        metrics.false_positive_rate = round(
-            false_positives / metrics.repeat_scenarios, 4
-        )
+        metrics.false_positive_rate = round(false_positives / metrics.repeat_scenarios, 4)
 
     # Metrics across all events
     if events:
@@ -137,9 +129,7 @@ def compute_metrics(
 
         # Average latency
         latencies = [
-            e["latency_first_attempt_ms"]
-            for e in events
-            if e["latency_first_attempt_ms"] > 0
+            e["latency_first_attempt_ms"] for e in events if e["latency_first_attempt_ms"] > 0
         ]
         if latencies:
             metrics.avg_latency_ms = int(sum(latencies) / len(latencies))
@@ -153,9 +143,7 @@ def compute_metrics(
         group_repeats = [e for e in group_events if e["is_repeat"]]
         if group_repeats:
             recall = sum(
-                1
-                for e in group_repeats
-                if e["applied_prior_fix"] and not e["re_teach_needed"]
+                1 for e in group_repeats if e["applied_prior_fix"] and not e["re_teach_needed"]
             )
             metrics.group_metrics[group] = {
                 "total": len(group_events),
@@ -248,7 +236,7 @@ def weekly_report(context_version: Optional[str] = None) -> str:
         lines.append("-" * 40)
         for group, data in sorted(metrics.group_metrics.items()):
             lines.append(
-                f"  {group:15} recall={data['fix_recall_rate']*100:.0f}% "
+                f"  {group:15} recall={data['fix_recall_rate'] * 100:.0f}% "
                 f"({data['repeats']}/{data['total']})"
             )
         lines.append("")
@@ -259,8 +247,7 @@ def weekly_report(context_version: Optional[str] = None) -> str:
         for week in drift:
             drift_str = f"{week['drift_pct']:+.1f}%" if week["drift_pct"] != 0 else "baseline"
             lines.append(
-                f"  {week['period']:15} recall={week['fix_recall_rate']*100:.0f}% "
-                f"({drift_str})"
+                f"  {week['period']:15} recall={week['fix_recall_rate'] * 100:.0f}% ({drift_str})"
             )
 
     lines.append("")
