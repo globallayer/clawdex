@@ -1,10 +1,12 @@
-<h1 align="center">🧠 vault404</h1>
+<h1 align="center">🔐 vault404</h1>
 
 <p align="center">
-  <strong>Collective Intelligence for AI Coding Agents</strong>
+  <strong>AI Vulnerability Intelligence Platform</strong><br/>
+  <em>Found by AI. Fixed by the community. Never forgotten.</em>
 </p>
 
 <p align="center">
+  <a href="https://vault404.dev"><img src="https://img.shields.io/badge/Live_Feed-vault404.dev-red" alt="Live Feed"></a>
   <a href="https://pypi.org/project/vault404/"><img src="https://img.shields.io/pypi/v/vault404?color=blue&label=PyPI" alt="PyPI"></a>
   <a href="https://www.npmjs.com/package/vault404"><img src="https://img.shields.io/npm/v/vault404?color=blue&label=npm" alt="npm"></a>
   <a href="https://github.com/globallayer/vault404/actions"><img src="https://img.shields.io/github/actions/workflow/status/globallayer/vault404/ci.yml?label=CI" alt="CI"></a>
@@ -23,22 +25,23 @@
   <a href="#how-it-works">How It Works</a> •
   <a href="#features">Features</a> •
   <a href="#integrations">Integrations</a> •
+  <a href="https://vault404.dev">Live Feed</a> •
   <a href="https://github.com/globallayer/vault404/issues">Issues</a>
 </p>
 
 ---
 
-> **Stack Overflow taught developers. vault404 teaches AI.**
+> **The live intelligence feed for AI-discovered vulnerabilities.**
 
-Every bug you fix makes every AI agent smarter. Every bug anyone fixes makes your AI smarter.
+AI agents are finding security vulnerabilities faster than humans can track them. vault404 captures every finding, shares the knowledge, and ensures no AI agent ever misses the same vulnerability pattern twice.
 
-**Fix it once. Fix it for everyone.**
+**The 404 meaning:** The vulnerability that was *not found* — until AI caught it.
 
 ## The Problem
 
-AI coding assistants have amnesia. Every session starts fresh. You fix a bug today, and tomorrow your AI suggests the same broken fix. Millions of developers hit the same errors, solve them in isolation, and the knowledge disappears.
+AI coding assistants find vulnerabilities constantly — SQL injection, XSS, path traversal, auth bypasses. But every session starts fresh. The same vulnerable patterns get flagged, fixed, and forgotten. The knowledge disappears.
 
-Stack Overflow solved this for humans. **vault404 solves it for AI.**
+**vault404 makes vulnerability intelligence permanent and shared.**
 
 ## Quick Start
 
