@@ -60,7 +60,8 @@
   - 5 each: CSRF, BrokenAuth, MissingAuth, RCE, DoS
   - Plus: IDOR, WeakCrypto, SSRF, Deserialization, XXE, SSTI, etc.
 
-- [x] Log findings as VulnerabilityReport entries (104 total)
+- [x] Log findings as VulnerabilityReport entries (104 local, 87 synced to Community Brain)
+- [x] Sync vulnerabilities to Community Brain (Supabase) - 87 patterns live
 - [ ] Open GitHub issues on affected repos (with vault404 credit)
 
 ### Frontend — vault404.dev

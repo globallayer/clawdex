@@ -1,5 +1,46 @@
 # vault404 - Session Notes
 
+## 2026-04-21 - Vulnerability Intelligence Pivot Complete
+
+### Summary
+Completed the vault404 pivot to AI vulnerability intelligence platform. Added vulnerability API endpoints, MCP tools, seeded 104 vulnerability patterns locally, and synced 87 patterns to the Community Brain (Supabase).
+
+### Changes
+- `src/vault404/api/routes.py`: Added 5 vulnerability endpoints (/vulns/report, /feed, /search, /verify, /stats)
+- `src/vault404/api/models.py`: Added Pydantic models for vulnerability requests/responses
+- `src/vault404/tools/vulnerability.py`: NEW - 3 MCP tools (report_vulnerability, find_similar_vuln, verify_vuln_fix)
+- `src/vault404/security/redactor.py`: Added VulnerabilityAnonymizer for pattern anonymization
+- `src/vault404/storage/schemas.py`: Added VulnerabilityReport model
+- `src/vault404/storage/local_storage.py`: Added vulnerability storage methods
+- `src/vault404/mcp_server.py`: Registered 3 new vulnerability MCP tools
+
+### Commits
+- `4dd7e87` feat: add vulnerability intelligence platform features
+- `bf528e5` docs: update TODO with 104 seeded vulnerabilities
+- `98fc640` feat: add /vulns/seed endpoint for initial data seeding
+- `8cb5c0a` fix: sync vulnerabilities to Community Brain (Supabase) instead of Railway API
+
+### Deployment
+- API redeployed to Railway with vulnerability endpoints
+- Community Brain (Supabase): 87 vulnerability patterns synced
+
+### Stats
+- Local: 104 vulnerability patterns
+- Community Brain: 87 vulnerability patterns
+- Coverage: 19 vuln types, 11 languages, 10 frameworks
+- Severity: 38 Critical, 38 High, 11 Medium
+
+### Architecture Decision
+- Vulnerabilities sync to **Community Brain (Supabase)** not Railway API
+- Railway API is for external consumers; Community Brain is shared knowledge repository
+
+### Next Steps
+- Build vault404.dev frontend dashboard
+- Update README with security-first positioning
+- Open GitHub issues on affected repos
+
+---
+
 ## 2026-04-16 (Session 2)
 
 ### Summary
